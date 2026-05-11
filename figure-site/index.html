@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>手办设计工作台</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+<script>
+  var ACCESS_PASSWORD = 'figure2025';
+
+  function checkAuth() {
+    var saved = localStorage.getItem('figure_auth');
+    document.getElementById('init-loading').style.display = 'none';
+    if (saved === ACCESS_PASSWORD) {
+      document.getElementById('app-screen').style.display = 'flex';
+    } else {
+      document.getElementById('auth-screen').style.display = 'flex';
+    }
+  }
+
+  function doAuth() {
+    var pw = document.getElementById('auth-pw').value.trim();
+    if (!pw) { showAuthErr('请输入访问密码'); return; }
+    if (pw === ACCESS_PASSWORD) {
+      localStorage.setItem('figure_auth', pw);
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'flex';
+    } else {
+      showAuthErr('密码错误，请重新输入');
+      document.getElementById('auth-pw').value = '';
+    }
+  }
+
+  function doLogout() {
+    localStorage.removeItem('figure_auth');
+    location.reload();
+  }
+
+  function showAuthErr(msg) {
+    var el = document.getElementById('auth-err');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  // 页面结构加载完立即执行
+  document.addEventListener('DOMContentLoaded', checkAuth);
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  @keyframes spin3d { to { transform: rotate(360deg); } }
+
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #f2f1ee;
+    --border: rgba(0,0,0,0.10);
+    --border2: rgba(0,0,0,0.18);
+    --text: #1a1a1a;
+    --text2: #666;
+    --text3: #999;
+    --accent: #c084fc;
+    --accent-bg: #faf5ff;
+    --accent-border: #d8b4fe;
+    --success: #16a34a;
+    --success-bg: #f0fdf4;
+    --error: #dc2626;
+    --error-bg: #fef2f2;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
+  }
+
+  body {
+    font-family: 'PingFang SC', 'Hiragino Sans GB', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* Auth screen */
+  #auth-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+  }
+  .auth-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 40px 36px; width: 380px;
+    box-shadow: var(--shadow);
+  }
+  .auth-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+  .auth-logo-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, #c084fc, #818cf8);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 18px;
+  }
+  .auth-logo-text { font-size: 16px; font-weight: 600; }
+  .auth-logo-sub { font-size: 12px; color: var(--text3); }
+  .auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .auth-tab {
+    flex: 1; text-align: center; padding: 10px 0; font-size: 14px;
+    color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent;
+    margin-bottom: -1px; transition: all 0.15s;
+  }
+  .auth-tab.on { color: #7c3aed; border-bottom-color: #7c3aed; font-weight: 500; }
+  .auth-field { margin-bottom: 14px; }
+  .auth-field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; }
+  .auth-field input {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); font-size: 14px; background: var(--surface2);
+    color: var(--text); outline: none; transition: border 0.15s; font-family: inherit;
+  }
+  .auth-field input:focus { border-color: #a855f7; background: #fff; }
+  .auth-submit {
+    width: 100%; padding: 11px; background: #7c3aed; color: #fff;
+    border: none; border-radius: var(--radius-sm); font-size: 14px;
+    font-weight: 500; cursor: pointer; font-family: inherit;
+    margin-top: 6px; transition: opacity 0.15s;
+  }
+  .auth-submit:hover { opacity: 0.88; }
+  .auth-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .auth-err {
+    font-size: 12px; color: var(--error); background: var(--error-bg);
+    border: 1px solid #fca5a5; border-radius: var(--radius-sm);
+    padding: 8px 10px; margin-top: 10px; display: none;
+  }
+
+  /* Layout */
+  #app-screen { display: none; }
+  .app { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 220px; min-width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .logo {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .logo-title {
+    font-size: 15px; font-weight: 600; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .logo-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, #c084fc, #818cf8);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 14px;
+  }
+  .logo-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 20px; cursor: pointer;
+    font-size: 13px; color: var(--text2);
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active {
+    color: #7c3aed; border-left-color: #7c3aed;
+    background: var(--accent-bg); font-weight: 500;
+  }
+  .nav-item i { font-size: 16px; }
+  .nav-num {
+    margin-left: auto; font-size: 10px; font-weight: 600;
+    color: var(--text3); background: var(--surface2);
+    padding: 1px 6px; border-radius: 10px;
+  }
+  .nav-num.done { background: var(--success-bg); color: var(--success); }
+
+  .main { flex: 1; padding: 32px; max-width: 860px; }
+
+  /* Section */
+  .section { margin-bottom: 24px; display: none; }
+  .section.visible { display: block; }
+
+  .section-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+  }
+  .section-icon {
+    width: 36px; height: 36px; border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .section-icon.purple { background: var(--accent-bg); color: #7c3aed; }
+  .section-icon.blue { background: #eff6ff; color: #2563eb; }
+  .section-icon.green { background: var(--success-bg); color: var(--success); }
+  .section-icon.orange { background: #fff7ed; color: #ea580c; }
+
+  .section-title { font-size: 17px; font-weight: 600; }
+  .section-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+
+  /* API Keys */
+  .key-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .key-label { font-size: 12px; font-weight: 500; color: var(--text2); min-width: 120px; }
+  .key-input {
+    flex: 1; padding: 8px 12px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border2); font-size: 13px;
+    font-family: 'SF Mono', Consolas, monospace;
+    background: var(--surface2); color: var(--text);
+    outline: none; transition: border 0.15s;
+  }
+  .key-input:focus { border-color: #a855f7; }
+
+  /* Upload */
+  .upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 32px;
+    text-align: center; cursor: pointer;
+    transition: all 0.15s; position: relative;
+    background: var(--surface2);
+  }
+  .upload-zone:hover { border-color: #a855f7; background: var(--accent-bg); }
+  .upload-zone.has-image { padding: 0; border-style: solid; }
+  .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  #preview-img { width: 100%; max-height: 240px; object-fit: contain; border-radius: calc(var(--radius) - 2px); display: none; }
+  .upload-hint i { font-size: 36px; color: var(--text3); margin-bottom: 8px; display: block; }
+  .upload-hint p { color: var(--text2); font-size: 13px; }
+  .upload-hint .sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  /* Form fields */
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .field-grid.full { grid-template-columns: 1fr; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 5px; }
+  .field input, .field textarea {
+    width: 100%; padding: 8px 12px;
+    border: 1px solid var(--border2); border-radius: var(--radius-sm);
+    font-size: 13px; background: var(--surface2); color: var(--text);
+    outline: none; transition: border 0.15s; font-family: inherit;
+    resize: none;
+  }
+  .field input:focus, .field textarea:focus { border-color: #a855f7; background: #fff; }
+
+  /* Tags */
+  .tag-section { margin-bottom: 14px; }
+  .tag-section-label { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 7px; }
+  .tag-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-size: 12px; padding: 5px 11px; border-radius: 20px;
+    border: 1px solid var(--border2); background: var(--surface2);
+    color: var(--text2); cursor: pointer; transition: all 0.12s;
+    user-select: none;
+  }
+  .tag:hover { border-color: #a855f7; color: #7c3aed; }
+  .tag.on { background: var(--accent-bg); border-color: var(--accent-border); color: #7c3aed; font-weight: 500; }
+
+  /* Prompt */
+  .prompt-wrap {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px;
+    font-size: 13px; line-height: 1.8; color: var(--text);
+    min-height: 80px; white-space: pre-wrap; word-break: break-word;
+  }
+  .prompt-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .prompt-label { font-size: 12px; font-weight: 500; color: var(--text2); }
+  .lang-toggle { display: flex; border: 1px solid var(--border2); border-radius: var(--radius-sm); overflow: hidden; }
+  .lang-btn {
+    padding: 3px 10px; font-size: 11px; cursor: pointer;
+    border: none; background: transparent; color: var(--text2);
+    transition: all 0.12s; font-family: inherit;
+  }
+  .lang-btn.on { background: #7c3aed; color: #fff; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border2); background: var(--surface);
+    color: var(--text); transition: all 0.12s; font-family: inherit;
+  }
+  .btn:hover { background: var(--surface2); border-color: #999; }
+  .btn:active { transform: scale(0.98); }
+  .btn i { font-size: 15px; }
+  .btn.primary { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+  .btn.primary:hover { background: #6d28d9; }
+  .btn.success { background: var(--success-bg); border-color: #86efac; color: var(--success); }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+  /* Progress / Status */
+  .status-bar {
+    padding: 10px 14px; border-radius: var(--radius-sm);
+    font-size: 13px; display: none; align-items: center; gap: 8px;
+    margin-top: 12px;
+  }
+  .status-bar.info { display: flex; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .status-bar.ok { display: flex; background: var(--success-bg); color: var(--success); border: 1px solid #86efac; }
+  .status-bar.err { display: flex; background: var(--error-bg); color: var(--error); border: 1px solid #fca5a5; }
+  .spinner {
+    width: 14px; height: 14px; border: 2px solid currentColor;
+    border-top-color: transparent; border-radius: 50%;
+    animation: spin 0.7s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Image grid */
+  .img-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin-top: 12px;
+  }
+  .img-cell {
+    position: relative; border-radius: var(--radius-sm);
+    border: 2px solid var(--border); overflow: hidden; cursor: pointer;
+    aspect-ratio: 1; transition: all 0.15s;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .img-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .img-cell:hover { border-color: #a855f7; }
+  .img-cell.selected { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.2); }
+  .img-cell .sel-badge {
+    position: absolute; top: 6px; right: 6px;
+    background: #7c3aed; color: #fff; border-radius: 50%;
+    width: 22px; height: 22px; display: none;
+    align-items: center; justify-content: center; font-size: 13px;
+  }
+  .img-cell.selected .sel-badge { display: flex; }
+  .img-placeholder {
+    width: 100%; height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px;
+    color: var(--text3); font-size: 12px;
+  }
+  .img-placeholder i { font-size: 24px; }
+
+  /* Tripo */
+  .tripo-status {
+    padding: 16px; border-radius: var(--radius);
+    background: var(--surface2); border: 1px solid var(--border);
+    margin-top: 12px;
+  }
+  .tripo-progress { height: 4px; background: var(--border2); border-radius: 2px; margin: 10px 0; overflow: hidden; }
+  .tripo-bar {
+    height: 100%; background: linear-gradient(90deg, #a855f7, #818cf8);
+    border-radius: 2px; width: 0%; transition: width 0.5s;
+  }
+  .tripo-label { font-size: 12px; color: var(--text2); }
+
+  /* Steps flow */
+  .flow-row {
+    display: flex; align-items: center; gap: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px;
+    margin-bottom: 24px; overflow-x: auto;
+  }
+  .flow-step {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text3);
+    white-space: nowrap; cursor: pointer; padding: 4px 8px;
+    border-radius: var(--radius-sm); transition: all 0.12s;
+  }
+  .flow-step:hover { background: var(--surface2); color: var(--text2); }
+  .flow-step.active { color: #7c3aed; font-weight: 500; }
+  .flow-step.done { color: var(--success); }
+  .flow-sep { color: var(--border2); padding: 0 2px; font-size: 12px; }
+  .flow-dot {
+    width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+    border: 1.5px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700;
+  }
+  .flow-step.done .flow-dot { background: var(--success); border-color: var(--success); color: #fff; }
+  .flow-step.active .flow-dot { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+
+  /* Divider */
+  hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+  /* Info note */
+  .note {
+    font-size: 12px; color: var(--text3); background: var(--surface2);
+    border-radius: var(--radius-sm); padding: 9px 12px;
+    border-left: 3px solid var(--accent-border);
+    line-height: 1.7; margin-top: 10px;
+  }
+
+  /* Download area */
+  .dl-card {
+    border: 2px dashed #86efac; background: var(--success-bg);
+    border-radius: var(--radius); padding: 20px; text-align: center;
+    display: none;
+  }
+  .dl-card.show { display: block; }
+  .dl-card i { font-size: 32px; color: var(--success); }
+  .dl-card p { color: var(--success); font-weight: 500; margin: 8px 0; }
+  .dl-card small { color: #4ade80; font-size: 12px; }
+  @keyframes spin3d { to { transform: rotate(360deg); } }
+  .mode-btn {
+    display:inline-flex;align-items:center;gap:6px;padding:8px 16px;
+    border-radius:var(--radius-sm);border:1px solid var(--border2);
+    background:var(--surface2);color:var(--text2);font-size:13px;cursor:pointer;transition:all 0.12s;
+  }
+  .mode-btn.on { background:var(--accent-bg);border-color:var(--accent-border);color:#7c3aed;font-weight:500; }
+  .res-btn {
+    flex:1;text-align:center;padding:7px 0;border-radius:var(--radius-sm);
+    border:1px solid var(--border2);background:var(--surface2);
+    color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.12s;
+  }
+  .res-btn.on { background:var(--accent-bg);border-color:var(--accent-border);color:#7c3aed;font-weight:500; }
+</style>
+</head>
+<body>
+
+<!-- 初始加载屏 -->
+<div id="init-loading" style="position:fixed;inset:0;background:#f7f6f3;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;">
+  <div style="width:40px;height:40px;border:3px solid #e9d5ff;border-top-color:#7c3aed;border-radius:50%;animation:spin3d 0.8s linear infinite;margin-bottom:16px;"></div>
+  <div style="font-size:14px;color:#7c3aed;font-weight:500;">正在连接...</div>
+</div>
+
+<!-- 密码锁页面 -->
+<div id="auth-screen" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:var(--bg);">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon"><i class="ti ti-cube-3d-sphere"></i></div>
+      <div>
+        <div class="auth-logo-text">手办设计工作台</div>
+        <div class="auth-logo-sub">POP MART · AI 全流程</div>
+      </div>
+    </div>
+    <div class="auth-field">
+      <label>访问密码</label>
+      <input type="password" id="auth-pw" placeholder="请输入访问密码" onkeydown="if(event.key==='Enter')doAuth()" />
+    </div>
+    <button class="auth-submit" onclick="doAuth()">进入工作台</button>
+    <div class="auth-err" id="auth-err"></div>
+  </div>
+</div>
+
+<!-- 主程序 -->
+<div id="app-screen">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-title">
+        <div class="logo-icon"><i class="ti ti-cube-3d-sphere"></i></div>
+        手办设计工作台
+      </div>
+      <div class="logo-sub">POP MART · AI 全流程</div>
+    </div>
+    <div style="padding:10px 20px 16px;border-bottom:1px solid var(--border);margin-bottom:8px;">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;">已登录</div>
+      <button onclick="doLogout()" style="margin-top:4px;font-size:11px;padding:4px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:transparent;color:var(--text3);cursor:pointer;font-family:inherit;">
+        <i class="ti ti-logout" style="font-size:12px;"></i> 退出
+      </button>
+    </div>
+    <div class="nav-item active" onclick="goStep(1)" id="nav1">
+      <i class="ti ti-key"></i> API 配置
+      <span class="nav-num" id="n1">1</span>
+    </div>
+    <div class="nav-item" onclick="goStep(2)" id="nav2">
+      <i class="ti ti-photo-up"></i> 上传参考图
+      <span class="nav-num" id="n2">2</span>
+    </div>
+    <div class="nav-item" onclick="goStep(3)" id="nav3">
+      <i class="ti ti-edit"></i> 手办信息
+      <span class="nav-num" id="n3">3</span>
+    </div>
+    <div class="nav-item" onclick="goStep(4)" id="nav4">
+      <i class="ti ti-wand"></i> 生成提示词
+      <span class="nav-num" id="n4">4</span>
+    </div>
+    <div class="nav-item" onclick="goStep(5)" id="nav5">
+      <i class="ti ti-sparkles"></i> AI 出图
+      <span class="nav-num" id="n5">5</span>
+    </div>
+    <div class="nav-item" onclick="goStep(6)" id="nav6">
+      <i class="ti ti-cube-3d-sphere"></i> 3D 建模
+      <span class="nav-num" id="n6">6</span>
+    </div>
+    <div class="nav-item" onclick="goStep(7)" id="nav7">
+      <i class="ti ti-printer"></i> 切片打印
+      <span class="nav-num" id="n7">7</span>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Flow bar -->
+    <div class="flow-row" id="flow-row">
+      <div class="flow-step active" onclick="goStep(1)" id="fs1"><div class="flow-dot">1</div>配置</div>
+      <div class="flow-sep">›</div>
+      <div class="flow-step" onclick="goStep(2)" id="fs2"><div class="flow-dot">2</div>上传</div>
+      <div class="flow-sep">›</div>
+      <div class="flow-step" onclick="goStep(3)" id="fs3"><div class="flow-dot">3</div>信息</div>
+      <div class="flow-sep">›</div>
+      <div class="flow-step" onclick="goStep(4)" id="fs4"><div class="flow-dot">4</div>提示词</div>
+      <div class="flow-sep">›</div>
+      <div class="flow-step" onclick="goStep(5)" id="fs5"><div class="flow-dot">5</div>AI出图</div>
+      <div class="flow-sep">›</div>
+      <div class="flow-step" onclick="goStep(6)" id="fs6"><div class="flow-dot">6</div>建模</div>
+      <div class="flow-sep">›</div>
+      <div class="flow-step" onclick="goStep(7)" id="fs7"><div class="flow-dot">7</div>打印</div>
+    </div>
+
+    <!-- Step 1: API Keys -->
+    <div class="section visible" id="sec1">
+      <div class="section-header">
+        <div class="section-icon purple"><i class="ti ti-key"></i></div>
+        <div><div class="section-title">API 配置</div><div class="section-sub">填写后保存在本地，不会上传到任何服务器</div></div>
+      </div>
+      <div class="card">
+        <div class="key-row">
+          <div class="key-label"><i class="ti ti-brand-openai"></i> OpenAI Key</div>
+          <input class="key-input" id="openai-key" type="password" placeholder="sk-..." />
+          <button class="btn" onclick="toggleVis('openai-key', this)"><i class="ti ti-eye"></i></button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:14px;padding-left:130px;">用于 AI 出图 (gpt-image-1 / DALL·E 3)</div>
+
+        <div class="key-row">
+          <div class="key-label"><i class="ti ti-cube-3d-sphere"></i> Tripo3D Key</div>
+          <input class="key-input" id="tripo-key" type="password" placeholder="tsk_..." />
+          <button class="btn" onclick="toggleVis('tripo-key', this)"><i class="ti ti-eye"></i></button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:14px;padding-left:130px;">用于 AI 3D 建模，注册 tripo3d.ai 后在账户设置获取</div>
+
+        <div class="btn-row">
+          <button class="btn primary" onclick="saveKeys()"><i class="ti ti-check"></i>保存配置</button>
+        </div>
+        <div class="status-bar" id="key-status"></div>
+        <div class="note">🔒 Key 仅存储在你的浏览器本地（localStorage），直接调用对应服务商 API，不经过任何中间服务器。</div>
+      </div>
+    </div>
+
+    <!-- Step 2: Upload -->
+    <div class="section" id="sec2">
+      <div class="section-header">
+        <div class="section-icon blue"><i class="ti ti-photo-up"></i></div>
+        <div><div class="section-title">上传参考图</div><div class="section-sub">最多 8 张，所有图片都会作为 AI 出图的参考</div></div>
+      </div>
+      <div class="card">
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+          <input type="file" accept="image/*" id="file-input" multiple style="display:none;" onchange="handleUpload(event)" />
+          <div id="upload-hint" class="upload-hint">
+            <i class="ti ti-cloud-upload"></i>
+            <p>点击上传参考图（最多 8 张）</p>
+            <p class="sub">JPG / PNG / WEBP，所有图片均会发给 AI 参考</p>
+          </div>
+        </div>
+        <!-- Preview grid -->
+        <div id="img-preview-grid" style="display:none;margin-top:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-size:12px;color:var(--text2);">已上传 <span id="img-count-label">0</span> 张参考图</div>
+            <button class="btn" onclick="document.getElementById('file-input').click()" style="font-size:11px;padding:4px 10px;">
+              <i class="ti ti-plus"></i> 继续添加
+            </button>
+          </div>
+          <div id="ref-img-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+        </div>
+        <div class="btn-row" style="margin-top:12px;">
+          <button class="btn primary" onclick="goStep(3)"><i class="ti ti-arrow-right"></i>下一步：填写信息</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Info -->
+    <div class="section" id="sec3">
+      <div class="section-header">
+        <div class="section-icon purple"><i class="ti ti-edit"></i></div>
+        <div><div class="section-title">手办信息</div><div class="section-sub">填写人物与底座信息，选择风格标签</div></div>
+      </div>
+      <div class="card">
+        <div class="field-grid">
+          <div class="field">
+            <label>人物名称 *</label>
+            <input type="text" id="char-name" placeholder="例：初音未来" oninput="buildPrompt()" />
+          </div>
+          <div class="field">
+            <label>底座主题 *</label>
+            <input type="text" id="base-theme" placeholder="例：樱花、星空、音符" oninput="buildPrompt()" />
+          </div>
+        </div>
+        <div class="field-grid full">
+          <div class="field">
+            <label>补充描述（可选）</label>
+            <textarea id="extra" rows="2" placeholder="例：手持麦克风、演唱会灯光背景..." oninput="buildPrompt()"></textarea>
+          </div>
+        </div>
+        <hr />
+        <div class="tag-section">
+          <div class="tag-section-label">风格选项（可多选）</div>
+          <div class="tag-group" id="style-tags">
+            <span class="tag" data-v="glossy finish" onclick="tog(this)">光泽感</span>
+            <span class="tag" data-v="pastel color palette" onclick="tog(this)">马卡龙配色</span>
+            <span class="tag" data-v="big sparkling eyes" onclick="tog(this)">大闪眼</span>
+            <span class="tag" data-v="chibi 2 head ratio" onclick="tog(this)">Q版2头身</span>
+            <span class="tag" data-v="highly detailed accessories" onclick="tog(this)">精细配饰</span>
+            <span class="tag" data-v="dynamic energetic pose" onclick="tog(this)">动感姿势</span>
+            <span class="tag" data-v="flowy hair" onclick="tog(this)">飘逸发型</span>
+            <span class="tag" data-v="transparent resin elements" onclick="tog(this)">透明树脂感</span>
+            <span class="tag" data-v="metallic sheen details" onclick="tog(this)">金属光泽</span>
+          </div>
+        </div>
+        <div class="tag-section">
+          <div class="tag-section-label">底座风格（可多选）</div>
+          <div class="tag-group" id="base-tags">
+            <span class="tag" data-v="circular base" onclick="tog(this)">圆形底座</span>
+            <span class="tag" data-v="hexagonal base" onclick="tog(this)">六边形底座</span>
+            <span class="tag" data-v="floating levitation base" onclick="tog(this)">悬浮底座</span>
+            <span class="tag" data-v="nature scene diorama base" onclick="tog(this)">场景底座</span>
+            <span class="tag" data-v="minimalist flat base" onclick="tog(this)">极简底座</span>
+            <span class="tag" data-v="crystal terrain base" onclick="tog(this)">水晶地形</span>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" onclick="goStep(4)"><i class="ti ti-arrow-right"></i>下一步：生成提示词</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Prompt -->
+    <div class="section" id="sec4">
+      <div class="section-header">
+        <div class="section-icon purple"><i class="ti ti-wand"></i></div>
+        <div><div class="section-title">提示词</div><div class="section-sub">自动生成，也可手动修改</div></div>
+      </div>
+      <div class="card">
+        <div class="prompt-header">
+          <div class="prompt-label">Prompt（可直接编辑修改）</div>
+          <div class="lang-toggle">
+            <button class="lang-btn on" onclick="setLang('en',this)">EN</button>
+            <button class="lang-btn" onclick="setLang('zh',this)">中文</button>
+          </div>
+        </div>
+        <textarea id="prompt-display" rows="6" style="width:100%;padding:12px 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;line-height:1.8;color:var(--text);background:var(--surface2);font-family:inherit;resize:vertical;outline:none;" placeholder="请先在「手办信息」步骤填写人物名称和底座主题" oninput="onPromptEdit()"></textarea>
+        <div class="btn-row">
+          <button class="btn" id="copy-btn" onclick="copyPrompt()"><i class="ti ti-copy"></i>复制</button>
+          <button class="btn primary" onclick="goStep(5)"><i class="ti ti-sparkles"></i>去 AI 出图</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5: Generate Images -->
+    <div class="section" id="sec5">
+      <div class="section-header">
+        <div class="section-icon blue"><i class="ti ti-sparkles"></i></div>
+        <div><div class="section-title">AI 出图</div><div class="section-sub">调用 OpenAI API，直接在此生成 6 张手办效果图</div></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px;">
+          <div>
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">生成数量</label>
+            <select id="img-count" style="padding:7px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit;">
+              <option value="2" selected>2 张</option>
+              <option value="4">4 张</option>
+              <option value="6">6 张</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">图像尺寸</label>
+            <select id="img-size" style="padding:7px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit;">
+              <option value="1024x1024" selected>1024×1024</option>
+              <option value="1024x1792">1024×1792（竖版）</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row" style="margin-top:0;">
+          <button class="btn primary" onclick="generateImages()" id="gen-btn"><i class="ti ti-sparkles"></i>开始生成</button>
+        </div>
+        <div class="status-bar" id="gen-status"></div>
+        <div class="img-grid" id="img-grid">
+          <!-- placeholders -->
+          <div class="img-cell" id="ic0"><div class="img-placeholder"><i class="ti ti-photo"></i><span>图 1</span></div><div class="sel-badge"><i class="ti ti-check"></i></div></div>
+          <div class="img-cell" id="ic1"><div class="img-placeholder"><i class="ti ti-photo"></i><span>图 2</span></div><div class="sel-badge"><i class="ti ti-check"></i></div></div>
+          <div class="img-cell" id="ic2"><div class="img-placeholder"><i class="ti ti-photo"></i><span>图 3</span></div><div class="sel-badge"><i class="ti ti-check"></i></div></div>
+          <div class="img-cell" id="ic3"><div class="img-placeholder"><i class="ti ti-photo"></i><span>图 4</span></div><div class="sel-badge"><i class="ti ti-check"></i></div></div>
+          <div class="img-cell" id="ic4"><div class="img-placeholder"><i class="ti ti-photo"></i><span>图 5</span></div><div class="sel-badge"><i class="ti ti-check"></i></div></div>
+          <div class="img-cell" id="ic5"><div class="img-placeholder"><i class="ti ti-photo"></i><span>图 6</span></div><div class="sel-badge"><i class="ti ti-check"></i></div></div>
+        </div>
+        <div class="btn-row" id="select-next-row" style="display:none;">
+          <button class="btn primary" onclick="goStep(6)"><i class="ti ti-cube-3d-sphere"></i>用选中图进行 3D 建模</button>
+          <button class="btn" onclick="downloadSelected()"><i class="ti ti-download"></i>下载选中图</button>
+        </div>
+        <div class="note" style="margin-top:12px;">点击图片选择最佳的一张，建议选正面或 ¾ 侧面、细节清晰的图用于建模。</div>
+      </div>
+    </div>
+
+    <!-- Step 6: 3D Modeling -->
+    <div class="section" id="sec6">
+      <div class="section-header">
+        <div class="section-icon green"><i class="ti ti-cube-3d-sphere"></i></div>
+        <div><div class="section-title">3D 建模</div><div class="section-sub">Tripo3D v3.1 最新模型 · 多图上传 · 多格式导出</div></div>
+      </div>
+      <div class="card">
+
+        <!-- 建模模式 -->
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:8px;">建模模式</div>
+          <div style="display:flex;gap:8px;">
+            <div class="mode-btn on" id="mode-single" onclick="setMode('single')"><i class="ti ti-photo"></i> 单图建模</div>
+            <div class="mode-btn" id="mode-multi" onclick="setMode('multi')"><i class="ti ti-photos"></i> 多视图建模</div>
+          </div>
+        </div>
+
+        <!-- 参考图区域 -->
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:8px;">参考图 <span id="tripo-img-hint" style="color:var(--text3);font-weight:400;">（使用 AI 生成的图，或重新上传）</span></div>
+          <div id="tripo-img-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn" onclick="useGeneratedImg()" id="use-gen-btn"><i class="ti ti-sparkles"></i>使用 AI 生成图</button>
+            <button class="btn" onclick="document.getElementById('tripo-upload').click()"><i class="ti ti-upload"></i>上传图片</button>
+            <input type="file" id="tripo-upload" accept="image/*" multiple style="display:none;" onchange="handleTripoUpload(event)" />
+          </div>
+        </div>
+
+        <hr style="margin:14px 0;" />
+
+        <!-- 建模设置 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div>
+            <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;">AI 模型版本</div>
+            <select id="tripo-model-ver" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit;">
+              <option value="v3.0-20250812" selected>v3.1 — 最高质量（推荐）</option>
+              <option value="v2.5-20250123">v2.5 — 速度更快</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;">导出格式</div>
+            <select id="tripo-format" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit;">
+              <option value="OBJ" selected>OBJ（推荐，兼容 HALOT BOX）</option>
+              <option value="FBX">FBX</option>
+              <option value="STL">STL</option>
+              <option value="GLB">GLB</option>
+              <option value="3MF">3MF</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div>
+            <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;">纹理分辨率</div>
+            <div style="display:flex;gap:6px;">
+              <div class="res-btn" onclick="setRes(512,this)">512</div>
+              <div class="res-btn" onclick="setRes(1024,this)">1k</div>
+              <div class="res-btn on" onclick="setRes(2048,this)">2k</div>
+              <div class="res-btn" onclick="setRes(4096,this)">4k</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;">模型质量</div>
+            <select id="tripo-quality" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit;">
+              <option value="high" selected>高精度</option>
+              <option value="medium">中等</option>
+              <option value="low">低（快速）</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="btn-row" style="margin-top:0;">
+          <button class="btn primary" onclick="startTripo()" id="tripo-btn" style="flex:1;justify-content:center;padding:10px;">
+            <i class="ti ti-cpu"></i>开始 AI 建模
+          </button>
+        </div>
+
+        <div class="status-bar" id="tripo-status"></div>
+
+        <!-- Loading -->
+        <div id="model-loading" style="display:none;margin-top:16px;">
+          <div style="background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);border-radius:var(--radius);padding:48px 24px;text-align:center;">
+            <div style="width:64px;height:64px;margin:0 auto 20px;position:relative;">
+              <svg viewBox="0 0 64 64" style="width:64px;height:64px;animation:spin3d 2s linear infinite;">
+                <circle cx="32" cy="32" r="28" fill="none" stroke="#c084fc" stroke-width="3" stroke-dasharray="44 132" stroke-linecap="round"/>
+                <circle cx="32" cy="32" r="18" fill="none" stroke="#818cf8" stroke-width="2" stroke-dasharray="28 84" stroke-linecap="round"/>
+              </svg>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:18px;">🎮</div>
+            </div>
+            <div id="loading-title" style="font-size:16px;font-weight:600;color:#e2e8f0;margin-bottom:8px;">AI 正在建模中...</div>
+            <div id="loading-sub" style="font-size:12px;color:#94a3b8;margin-bottom:20px;">通常需要 1~3 分钟，请耐心等待</div>
+            <div style="background:rgba(255,255,255,0.1);border-radius:20px;height:6px;overflow:hidden;max-width:280px;margin:0 auto;">
+              <div id="loading-bar" style="height:100%;background:linear-gradient(90deg,#c084fc,#818cf8);border-radius:20px;width:0%;transition:width 0.5s;"></div>
+            </div>
+            <div id="loading-pct" style="font-size:11px;color:#94a3b8;margin-top:8px;">0%</div>
+          </div>
+        </div>
+
+        <!-- 3D Viewer -->
+        <div id="viewer-wrap" style="display:none;margin-top:16px;">
+          <div style="background:#1a1a2e;border-radius:var(--radius);overflow:hidden;position:relative;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(0,0,0,0.4);border-bottom:1px solid rgba(255,255,255,0.08);">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <i class="ti ti-cube-3d-sphere" style="color:#c084fc;font-size:16px;"></i>
+                <span style="font-size:13px;color:#e2e8f0;font-weight:500;">3D 模型预览</span>
+                <span style="font-size:11px;color:#64748b;">拖拽旋转 · 滚轮缩放 · 双指触控</span>
+              </div>
+              <button onclick="reDownload()" style="padding:5px 10px;border-radius:6px;border:1px solid rgba(192,132,252,0.4);background:rgba(192,132,252,0.15);color:#c084fc;font-size:11px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;">
+                <i class="ti ti-download" style="font-size:13px;"></i>下载模型
+              </button>
+            </div>
+            <model-viewer
+              id="model-viewer-el"
+              style="width:100%;height:440px;background:#1a1a2e;"
+              camera-controls
+              auto-rotate
+              shadow-intensity="1"
+              environment-image="neutral"
+              exposure="0.8"
+              ar
+            ></model-viewer>
+          </div>
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="btn success" onclick="reDownload()"><i class="ti ti-download"></i>下载模型文件</button>
+            <button class="btn primary" onclick="goStep(7)"><i class="ti ti-printer"></i>下一步：切片打印</button>
+          </div>
+        </div>
+
+        <div class="note" style="margin-top:12px;">Tripo3D 免费账户有每日额度，如超出请登录 tripo3d.ai 查看用量。</div>
+      </div>
+    </div>
+
+    <!-- Step 7: HALOT BOX -->
+    <div class="section" id="sec7">
+      <div class="section-header">
+        <div class="section-icon orange"><i class="ti ti-printer"></i></div>
+        <div><div class="section-title">HALOT BOX 切片打印</div><div class="section-sub">将 OBJ 导入本地 HALOT BOX 软件进行切片</div></div>
+      </div>
+      <div class="card">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.8;">
+          OBJ 文件已下载到本地，现在打开 HALOT BOX 软件完成最后步骤：
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div style="padding:14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);">
+            <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px;"><i class="ti ti-adjustments" style="color:#7c3aed;"></i>推荐打印参数</div>
+            <div style="font-size:12px;color:var(--text2);line-height:2;">
+              层厚：<strong>0.05 mm</strong><br>
+              正常曝光：<strong>2~3 s</strong><br>
+              底层曝光：<strong>30~40 s</strong><br>
+              底层层数：<strong>5~8 层</strong><br>
+              支撑密度：<strong>中等</strong>
+            </div>
+          </div>
+          <div style="padding:14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border);">
+            <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:6px;"><i class="ti ti-list-check" style="color:#16a34a;"></i>操作步骤</div>
+            <div style="font-size:12px;color:var(--text2);line-height:2;">
+              1. 打开 HALOT BOX<br>
+              2. 导入 OBJ 文件<br>
+              3. 自动摆放 + 添加支撑<br>
+              4. 设置参数 → 切片<br>
+              5. 导出 .cxdlp 到 U 盘打印
+            </div>
+          </div>
+        </div>
+        <div class="note">💡 手办建议打印尺寸：高度 80~120mm，可在 HALOT BOX 的缩放工具中调整。打印前务必摇匀光敏树脂。</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  var curStep = 1;
+  var lang = 'en';
+  var promptEn = '';
+  var promptZh = '';
+  var promptManuallyEdited = false;
+  var selectedImg = null;
+  var selectedImgData = null;
+  var generatedImgs = {};
+  var tripoObjUrl = null;
+  var refImages = []; // stores base64 data URLs of uploaded ref images
+
+  window.onload = function() {
+    var ok = document.getElementById('openai-key');
+    var tk = document.getElementById('tripo-key');
+    ok.value = localStorage.getItem('oai_key') || '';
+    tk.value = localStorage.getItem('tripo_key') || '';
+  };
+
+  function goStep(n) {
+    document.getElementById('sec' + curStep).classList.remove('visible');
+    document.getElementById('nav' + curStep).classList.remove('active');
+    document.getElementById('fs' + curStep).classList.remove('active');
+
+    curStep = n;
+    document.getElementById('sec' + n).classList.add('visible');
+    document.getElementById('nav' + n).classList.add('active');
+    document.getElementById('fs' + n).classList.add('active');
+
+    if (n === 4) buildPrompt();
+    if (n === 6) showTripoRef();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function markDone(n) {
+    var fs = document.getElementById('fs' + n);
+    fs.classList.remove('active');
+    fs.classList.add('done');
+    fs.querySelector('.flow-dot').innerHTML = '<i class="ti ti-check" style="font-size:9px;"></i>';
+    var nn = document.getElementById('n' + n);
+    nn.classList.add('done');
+    nn.textContent = '✓';
+  }
+
+  function toggleVis(id, btn) {
+    var el = document.getElementById(id);
+    if (el.type === 'password') { el.type = 'text'; btn.innerHTML = '<i class="ti ti-eye-off"></i>'; }
+    else { el.type = 'password'; btn.innerHTML = '<i class="ti ti-eye"></i>'; }
+  }
+
+  function saveKeys() {
+    var ok = document.getElementById('openai-key').value.trim();
+    var tk = document.getElementById('tripo-key').value.trim();
+    if (!ok && !tk) { showStatus('key-status', 'err', '请至少填写一个 API Key'); return; }
+    localStorage.setItem('oai_key', ok);
+    localStorage.setItem('tripo_key', tk);
+    showStatus('key-status', 'ok', '已保存到本地浏览器');
+    markDone(1);
+    setTimeout(function() { goStep(2); }, 800);
+  }
+
+  function showStatus(id, type, msg, loading) {
+    var el = document.getElementById(id);
+    el.className = 'status-bar ' + type;
+    el.innerHTML = (loading ? '<div class="spinner"></div>' : '') + msg;
+  }
+  function hideStatus(id) { document.getElementById(id).className = 'status-bar'; }
+
+  function handleUpload(e) {
+    var files = Array.from(e.target.files);
+    if (!files.length) return;
+    var remaining = 8 - refImages.length;
+    files = files.slice(0, remaining);
+    var loaded = 0;
+    files.forEach(function(file) {
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        refImages.push(ev.target.result);
+        loaded++;
+        if (loaded === files.length) renderRefGrid();
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  }
+
+  function renderRefGrid() {
+    var grid = document.getElementById('ref-img-grid');
+    var hint = document.getElementById('upload-hint');
+    var previewSection = document.getElementById('img-preview-grid');
+    document.getElementById('img-count-label').textContent = refImages.length;
+    grid.innerHTML = '';
+    refImages.forEach(function(src, idx) {
+      var cell = document.createElement('div');
+      cell.style.cssText = 'position:relative;border-radius:6px;overflow:hidden;aspect-ratio:1;background:var(--surface2);border:1px solid var(--border);';
+      cell.innerHTML = '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover;" />'
+        + '<button onclick="removeRefImg(' + idx + ')" style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;border:none;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;"><i class="ti ti-x"></i></button>';
+      grid.appendChild(cell);
+    });
+    if (refImages.length > 0) {
+      hint.style.display = 'none';
+      previewSection.style.display = 'block';
+      markDone(2);
+    }
+    if (refImages.length >= 8) {
+      document.querySelector('#img-preview-grid .btn').style.display = 'none';
+    }
+  }
+
+  function removeRefImg(idx) {
+    refImages.splice(idx, 1);
+    if (refImages.length === 0) {
+      document.getElementById('upload-hint').style.display = 'block';
+      document.getElementById('img-preview-grid').style.display = 'none';
+    } else {
+      renderRefGrid();
+    }
+  }
+
+  function tog(el) { el.classList.toggle('on'); buildPrompt(); }
+
+  function getTagVals(id) {
+    return Array.from(document.querySelectorAll('#' + id + ' .tag.on')).map(function(t) { return t.dataset.v; });
+  }
+
+  function buildPrompt() {
+    var name = document.getElementById('char-name').value.trim();
+    var base = document.getElementById('base-theme').value.trim();
+    var extra = document.getElementById('extra').value.trim();
+    var st = getTagVals('style-tags');
+    var bt = getTagVals('base-tags');
+
+    var styleStr = st.length ? ', ' + st.join(', ') : '';
+    var baseTagStr = bt.length ? ', ' + bt.join(', ') : '';
+    var extraStr = extra ? ', ' + extra : '';
+    var n = name || '[character name]';
+    var b = base || '[base theme]';
+
+    promptEn = 'A POP MART style vinyl collectible toy figure of ' + n + '. Cute chibi design with big expressive eyes and rounded face. Faithfully replicate the character\'s outfit and pose from the reference image' + extraStr + styleStr + '. The base features elements related to ' + b + baseTagStr + '. Studio product photography, white background, isometric 3/4 angle, clean soft lighting, toy collectible aesthetic, high detail render.';
+    promptZh = '将参考图中的人物做成泡泡玛特（POP MART）风格手办。人物叫' + n + '，Q版可爱造型，大眼睛圆脸，忠实还原图片中的服装与动作' + (extra ? '，' + extra : '') + (st.length ? '，' + st.join('、') : '') + '。底座以' + b + '为主题' + (bt.length ? '，' + bt.join('、') : '') + '。产品摄影风格，白色背景，斜侧45°角，柔和打光，高精度手办质感。';
+
+    if (!promptManuallyEdited) {
+      var display = document.getElementById('prompt-display');
+      display.value = lang === 'en' ? promptEn : promptZh;
+    }
+    if (name && base) markDone(3);
+  }
+
+  function onPromptEdit() {
+    promptManuallyEdited = true;
+  }
+
+  function getEditedPrompt() {
+    return document.getElementById('prompt-display').value.trim();
+  }
+
+  function setLang(l, btn) {
+    lang = l;
+    promptManuallyEdited = false;
+    document.querySelectorAll('.lang-btn').forEach(function(b) { b.classList.remove('on'); });
+    btn.classList.add('on');
+    buildPrompt();
+  }
+
+  function copyPrompt() {
+    var text = getEditedPrompt();
+    if (!text) { alert('提示词为空'); return; }
+    navigator.clipboard.writeText(text).then(function() {
+      var btn = document.getElementById('copy-btn');
+      btn.innerHTML = '<i class="ti ti-check"></i>已复制';
+      btn.className = 'btn success';
+      setTimeout(function() { btn.innerHTML = '<i class="ti ti-copy"></i>复制'; btn.className = 'btn'; }, 2000);
+      markDone(4);
+    });
+  }
+
+  async function generateImages() {
+    var key = localStorage.getItem('oai_key');
+    if (!key) { alert('请先在「API 配置」步骤填写 OpenAI API Key'); return; }
+    var prompt = getEditedPrompt();
+    if (!prompt) { alert('请先填写提示词'); return; }
+
+    var count = parseInt(document.getElementById('img-count').value);
+    var size = document.getElementById('img-size').value;
+    var btn = document.getElementById('gen-btn');
+    btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>生成中...';
+    showStatus('gen-status', 'info', '正在调用 OpenAI API 生成图片，请稍候...', true);
+
+    for (var i = 0; i < 6; i++) {
+      var cell = document.getElementById('ic' + i);
+      cell.className = 'img-cell';
+      cell.onclick = null;
+      if (i < count) {
+        cell.innerHTML = '<div class="img-placeholder"><div class="spinner"></div><span>生成中...</span></div><div class="sel-badge"><i class="ti ti-check"></i></div>';
+        cell.style.display = '';
+      } else {
+        cell.style.display = 'none';
+      }
+    }
+    document.getElementById('select-next-row').style.display = 'none';
+    generatedImgs = {}; selectedImg = null; selectedImgData = null;
+
+    var promises = [];
+    for (var j = 0; j < count; j++) promises.push(genOne(key, prompt, size, j));
+    var results = await Promise.allSettled(promises);
+    var success = results.filter(function(r) { return r.status === 'fulfilled'; }).length;
+
+    btn.disabled = false; btn.innerHTML = '<i class="ti ti-sparkles"></i>重新生成';
+    if (success === 0) {
+      showStatus('gen-status', 'err', '生成失败，请检查 API Key 是否正确或余额是否充足');
+    } else {
+      showStatus('gen-status', 'ok', '已生成 ' + success + '/' + count + ' 张，点击选择最佳一张');
+      markDone(5);
+      document.getElementById('select-next-row').style.display = 'flex';
+    }
+  }
+
+  async function genOne(key, prompt, size, idx) {
+    try {
+      var src;
+      if (refImages.length > 0) {
+        var fd = new FormData();
+        refImages.forEach(function(dataUrl, i) {
+          var b64 = dataUrl.split(',')[1];
+          var mime = dataUrl.split(';')[0].split(':')[1] || 'image/png';
+          var ext2 = mime === 'image/jpeg' ? 'jpg' : 'png';
+          var bytes = atob(b64);
+          var arr = new Uint8Array(bytes.length);
+          for (var k = 0; k < bytes.length; k++) arr[k] = bytes.charCodeAt(k);
+          fd.append('image[]', new Blob([arr], { type: mime }), 'ref' + i + '.' + ext2);
+        });
+        fd.append('prompt', prompt);
+        fd.append('model', 'gpt-image-1');
+        fd.append('n', '1');
+        fd.append('size', size);
+        var resp = await fetch('https://api.openai.com/v1/images/edits', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + key },
+          body: fd
+        });
+        var data = await resp.json();
+        if (data.error) throw new Error(data.error.message);
+        src = 'data:image/png;base64,' + data.data[0].b64_json;
+      } else {
+        var resp2 = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+          body: JSON.stringify({ model: 'gpt-image-1', prompt: prompt, n: 1, size: size })
+        });
+        var data2 = await resp2.json();
+        if (data2.error) throw new Error(data2.error.message);
+        src = 'data:image/png;base64,' + data2.data[0].b64_json;
+      }
+      generatedImgs[idx] = src;
+      var cell = document.getElementById('ic' + idx);
+      cell.innerHTML = '<img src="' + src + '" alt="生成图' + (idx+1) + '" /><div class="sel-badge"><i class="ti ti-check"></i></div>';
+      cell.onclick = (function(i, s) { return function() { selectImg(i, s); }; })(idx, src);
+    } catch(e) {
+      var cell = document.getElementById('ic' + idx);
+      cell.innerHTML = '<div class="img-placeholder"><i class="ti ti-alert-circle" style="color:var(--error);"></i><span style="color:var(--error);font-size:11px;">' + e.message.slice(0,50) + '</span></div><div class="sel-badge"><i class="ti ti-check"></i></div>';
+      throw e;
+    }
+  }
+
+  function selectImg(idx, src) {
+    document.querySelectorAll('.img-cell').forEach(function(c) { c.classList.remove('selected'); });
+    document.getElementById('ic' + idx).classList.add('selected');
+    selectedImg = idx;
+    selectedImgData = src;
+  }
+
+  function downloadSelected() {
+    if (!selectedImgData) { alert('请先点击选择一张图'); return; }
+    var a = document.createElement('a');
+    a.href = selectedImgData;
+    a.download = 'figure_design_' + (selectedImg + 1) + '.png';
+    a.click();
+  }
+
+  // ── Tripo3D ──
+  var tripoMode = 'single';
+  var tripoImgs = [];
+  var tripoRes = 2048;
+
+  function setMode(m) {
+    tripoMode = m;
+    document.getElementById('mode-single').className = 'mode-btn' + (m==='single'?' on':'');
+    document.getElementById('mode-multi').className = 'mode-btn' + (m==='multi'?' on':'');
+    document.getElementById('tripo-img-hint').textContent = m==='multi'
+      ? '（上传 2~4 张不同角度的图片，效果更好）'
+      : '（使用 AI 生成的图，或重新上传）';
+  }
+
+  function setRes(r, el) {
+    tripoRes = r;
+    document.querySelectorAll('.res-btn').forEach(function(b){ b.classList.remove('on'); });
+    el.classList.add('on');
+  }
+
+  function useGeneratedImg() {
+    if (selectedImgData) {
+      tripoImgs = [selectedImgData];
+    } else if (refImages.length > 0) {
+      tripoImgs = [refImages[0]];
+    } else {
+      alert('请先在 AI 出图步骤生成图片，或上传参考图');
+      return;
+    }
+    renderTripoImgGrid();
+  }
+
+  function handleTripoUpload(e) {
+    var files = Array.from(e.target.files).slice(0, 4);
+    var loaded = 0;
+    files.forEach(function(f) {
+      var r = new FileReader();
+      r.onload = function(ev) {
+        tripoImgs.push(ev.target.result);
+        loaded++;
+        if (loaded === files.length) renderTripoImgGrid();
+      };
+      r.readAsDataURL(f);
+    });
+    e.target.value = '';
+  }
+
+  function renderTripoImgGrid() {
+    var grid = document.getElementById('tripo-img-grid');
+    grid.innerHTML = '';
+    tripoImgs.forEach(function(src, idx) {
+      var cell = document.createElement('div');
+      cell.style.cssText = 'position:relative;border-radius:6px;overflow:hidden;aspect-ratio:1;background:var(--surface2);border:1px solid var(--border);';
+      cell.innerHTML = '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover;" />'
+        + '<button onclick="removeTripoImg(' + idx + ')" style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;border:none;cursor:pointer;font-size:11px;line-height:1;"><i class="ti ti-x"></i></button>';
+      grid.appendChild(cell);
+    });
+  }
+
+  function removeTripoImg(idx) {
+    tripoImgs.splice(idx, 1);
+    renderTripoImgGrid();
+  }
+
+  function showTripoRef() {
+    // auto-fill with selected or first ref image
+    if (tripoImgs.length === 0) {
+      var src = selectedImgData || (refImages.length > 0 ? refImages[0] : null);
+      if (src) { tripoImgs = [src]; renderTripoImgGrid(); }
+    }
+  }
+
+  async function startTripo() {
+    if (tripoImgs.length === 0) {
+      // auto use selected or ref
+      var src = selectedImgData || (refImages.length > 0 ? refImages[0] : null);
+      if (!src) { alert('请先上传参考图或选择 AI 生成的图'); return; }
+      tripoImgs = [src]; renderTripoImgGrid();
+    }
+
+    var format = document.getElementById('tripo-format').value;
+    var modelVer = document.getElementById('tripo-model-ver').value;
+    var btn = document.getElementById('tripo-btn');
+    btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>建模中...';
+    document.getElementById('viewer-wrap').style.display = 'none';
+    document.getElementById('model-loading').style.display = 'block';
+    hideStatus('tripo-status');
+    setTripoProgress(5, '正在上传图片...');
+
+    try {
+      // Upload all images
+      var tokens = [];
+      for (var i = 0; i < tripoImgs.length; i++) {
+        var imgData = tripoImgs[i];
+        var b64 = imgData.split(',')[1];
+        var mime = imgData.split(';')[0].split(':')[1] || 'image/png';
+        var ext = mime === 'image/jpeg' ? 'jpg' : 'png';
+        var bytes = atob(b64);
+        var arr = new Uint8Array(bytes.length);
+        for (var k = 0; k < bytes.length; k++) arr[k] = bytes.charCodeAt(k);
+        var blob = new Blob([arr], { type: mime });
+        var fd = new FormData();
+        fd.append('file', blob, 'ref' + i + '.' + ext);
+        var upResp = await fetch('/.netlify/functions/tripo?path=upload', { method: 'POST', body: fd });
+        var upData = await upResp.json();
+        if (upData.code !== 0) throw new Error('图片上传失败：' + (upData.message || ''));
+        tokens.push({ type: ext, file_token: upData.data.image_token });
+        setTripoProgress(5 + (i+1) * (15 / tripoImgs.length), '上传图片 ' + (i+1) + '/' + tripoImgs.length);
+      }
+
+      setTripoProgress(22, '创建建模任务...');
+
+      // Create task — multi-view or single
+      var taskBody;
+      if (tripoMode === 'multi' && tokens.length > 1) {
+        taskBody = { type: 'multiview_to_model', files: tokens, model_version: modelVer };
+      } else {
+        taskBody = { type: 'image_to_model', file: tokens[0], model_version: modelVer };
+      }
+
+      var taskResp = await fetch('/.netlify/functions/tripo?path=task', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(taskBody)
+      });
+      var taskData = await taskResp.json();
+      if (taskData.code !== 0) throw new Error(taskData.message || '任务创建失败');
+
+      var taskId = taskData.data.task_id;
+      setTripoProgress(30, 'AI 建模中...');
+
+      // Poll main task
+      var glbUrl = await pollTask(taskId, 30, 88);
+      if (!glbUrl) throw new Error('建模完成但未找到模型链接');
+
+      // Convert to selected format
+      var downloadUrl = glbUrl;
+      var downloadName = 'figure_model.' + format.toLowerCase();
+
+      if (format !== 'GLB') {
+        setTripoProgress(90, '转换为 ' + format + ' 格式...');
+        var cvResp = await fetch('/.netlify/functions/tripo?path=task', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'convert_model', format: format, original_model_task_id: taskId, quad: false, face_limit: 200000, texture_resolution: tripoRes })
+        });
+        var cvData = await cvResp.json();
+        if (cvData.code === 0) {
+          var cvUrl = await pollTask(cvData.data.task_id, 90, 98);
+          if (cvUrl) downloadUrl = cvUrl;
+        }
+      }
+
+      tripoObjUrl = downloadUrl;
+      setTripoProgress(100, '完成！');
+      showStatus('tripo-status', 'ok', '模型生成成功！格式：' + format + ' · 纹理：' + (tripoRes >= 1024 ? tripoRes/1024 + 'k' : tripoRes));
+      markDone(6);
+      triggerDownload(downloadUrl, downloadName);
+      document.getElementById('model-loading').style.display = 'none';
+      document.getElementById('viewer-wrap').style.display = 'block';
+      btn.disabled = false; btn.innerHTML = '<i class="ti ti-cpu"></i>开始 AI 建模';
+      loadModelIntoViewer(glbUrl);
+
+    } catch(e) {
+      btn.disabled = false; btn.innerHTML = '<i class="ti ti-cpu"></i>开始 AI 建模';
+      document.getElementById('model-loading').style.display = 'none';
+      showStatus('tripo-status', 'err', '建模失败：' + e.message);
+    }
+  }
+
+  async function pollTask(taskId, pctStart, pctEnd) {
+    for (var i = 0; i < 80; i++) {
+      await sleep(3000);
+      var pct = pctStart + (pctEnd - pctStart) * (i / 80);
+      setTripoProgress(pct, 'AI 处理中... (' + (i+1)*3 + 's)');
+      try {
+        var r = await fetch('/.netlify/functions/tripo?path=task/' + taskId);
+        var d = await r.json();
+        if (d.code !== 0) continue;
+        var st = d.data.status;
+        if (st === 'success') {
+          var out = d.data.output;
+          return out && (out.model || out.pbr_model || out.base_model) || null;
+        }
+        if (st === 'failed' || st === 'cancelled') throw new Error('任务失败，状态：' + st);
+      } catch(e) { if (e.message.includes('任务失败')) throw e; }
+    }
+    throw new Error('超时，请稍后重试');
+  }
+
+  function setTripoProgress(pct, label) {
+    document.getElementById('tripo-stage') && (document.getElementById('tripo-stage').textContent = label);
+    document.getElementById('tripo-pct') && (document.getElementById('tripo-pct').textContent = Math.round(pct) + '%');
+    var lb = document.getElementById('loading-bar');
+    var lp = document.getElementById('loading-pct');
+    var lt = document.getElementById('loading-title');
+    var ls = document.getElementById('loading-sub');
+    if (lb) lb.style.width = pct + '%';
+    if (lp) lp.textContent = Math.round(pct) + '%';
+    if (lt) lt.textContent = label;
+    var tips = ['AI 正在理解图片结构...','生成三维网格点云...','优化模型拓扑结构...','添加材质与细节...','最终渲染处理...'];
+    if (ls) ls.textContent = tips[Math.floor(pct / 20)] || tips[4];
+  }
+
+  function triggerDownload(url, filename) {
+    var a = document.createElement('a');
+    a.href = url; a.download = filename; a.target = '_blank';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+
+  function reDownload() {
+    if (tripoObjUrl) triggerDownload(tripoObjUrl, 'figure_model.obj');
+    else alert('暂无下载链接');
+  }
+
+  function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+  function loadModelIntoViewer(url) {
+    var mv = document.getElementById('model-viewer-el');
+    if (!mv) return;
+    mv.src = url;
+  }
+
+  function resetCamera() {
+    var mv = document.getElementById('model-viewer-el');
+    if (mv) { mv.cameraOrbit = 'auto auto auto'; mv.fieldOfView = 'auto'; }
+  }
+
+  function toggleWireframe() {}
+
+</script>
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+</div><!-- end app-screen -->
+</body>
+</html>
